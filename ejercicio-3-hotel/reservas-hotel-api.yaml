@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  title: API de Administración de Reservas de Hotel
+  description: API REST para gestionar las reservas de un hotel.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Reservas
+    description: Operaciones sobre las reservas del hotel
+
+paths:
+  /reservas:
+    post:
+      tags: [Reservas]
+      summary: Crear una nueva reserva
+      operationId: crearReserva
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaRequest'
+            example:
+              nombreCliente: "Mario Pérez"
+              habitacion: "205"
+              fechaEntrada: "2026-10-01"
+              fechaSalida: "2026-10-05"
+              estado: "CONFIRMADA"
+      responses:
+        '201':
+          description: Reserva creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaResponse'
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [Reservas]
+      summary: Consultar todas las reservas
+      operationId: consultarReservas
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          description: Filtra las reservas por estado
+          schema:
+            $ref: '#/components/schemas/EstadoReserva'
+      responses:
+        '200':
+          description: Lista de reservas obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservaResponse'
+
+  /reservas/{id}:
+    get:
+      tags: [Reservas]
+      summary: Consultar una reserva por id
+      operationId: consultarReservaPorId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Reserva encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaResponse'
+        '404':
+          description: No existe una reserva con ese id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Reservas]
+      summary: Actualizar una reserva existente
+      operationId: actualizarReserva
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservaRequest'
+      responses:
+        '200':
+          description: Reserva actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaResponse'
+        '400':
+          description: Datos de la solicitud inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No existe una reserva con ese id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reservas/{id}/cancelar:
+    patch:
+      tags: [Reservas]
+      summary: Cancelar una reserva
+      description: Cambia el estado de la reserva a CANCELADA sin eliminar el registro.
+      operationId: cancelarReserva
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Reserva cancelada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaResponse'
+        '404':
+          description: No existe una reserva con ese id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: La reserva ya se encuentra cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    EstadoReserva:
+      type: string
+      enum: [CONFIRMADA, PENDIENTE, CANCELADA, FINALIZADA]
+
+    ReservaRequest:
+      type: object
+      required: [nombreCliente, habitacion, fechaEntrada, fechaSalida, estado]
+      properties:
+        nombreCliente:
+          type: string
+          example: "Mario Pérez"
+        habitacion:
+          type: string
+          example: "205"
+        fechaEntrada:
+          type: string
+          format: date
+          example: "2026-10-01"
+        fechaSalida:
+          type: string
+          format: date
+          example: "2026-10-05"
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+
+    ReservaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombreCliente:
+          type: string
+          example: "Mario Pérez"
+        habitacion:
+          type: string
+          example: "205"
+        fechaEntrada:
+          type: string
+          format: date
+          example: "2026-10-01"
+        fechaSalida:
+          type: string
+          format: date
+          example: "2026-10-05"
+        estado:
+          $ref: '#/components/schemas/EstadoReserva'
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: "Not Found"
+        message:
+          type: string
+          example: "No se encontró la reserva solicitada"
